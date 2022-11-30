@@ -2,6 +2,7 @@ var express = require("express");
 var router = express.Router();
 var { authorize } = require("../middleware/authorize");
 const Validator = require("fastest-validator");
+const upload = require("../controllers/upload");
 
 //untuk memanggil nama
 const { Product } = require("../models");
@@ -18,6 +19,9 @@ router.get("/:id", async (req, res) => {
   const product = await Product.findByPk(id);
   return res.json(product || {});
 });
+
+//endpoint Uploads
+router.use("/uploads", upload.onUpload);
 
 router.post("/", authorize(["admin", "hr"]), async (req, res) => {
   //   res.send("ini adalah post");
@@ -84,4 +88,5 @@ router.delete("/:id", authorize(["admin", "hr"]), async (req, res) => {
     message: "product deleted",
   });
 });
+
 module.exports = router;

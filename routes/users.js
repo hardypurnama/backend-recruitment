@@ -1,6 +1,8 @@
 var express = require("express");
+const { Op } = require("sequelize");
 var router = express.Router();
 var { authorize } = require("../middleware/authorize");
+const upload = require("../controllers/upload");
 const Validator = require("fastest-validator");
 const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
@@ -28,6 +30,9 @@ function checkPassword(encryptedPassword, password) {
     });
   });
 }
+
+//endpoint Uploads
+router.use("/uploads", upload.onUpload);
 
 router.get("/", async (req, res) => {
   const users = await User.findAll();
@@ -90,6 +95,18 @@ router.post("/register", async (req, res) => {
   if (validate.length) {
     return res.status(400).json(validate);
   }
+
+  const { email, username } = req.body;
+
+  const validateEmail = await User.findOne({
+    where: {
+      [Op.or]: [{ username: username }, { email: email }],
+    },
+  });
+  if (validateEmail) {
+    return res.json({ message: "username/email already exsist!" });
+  }
+
   //   res.send("ok");
   const user = await User.create(req.body);
   const Role = await role.create({
@@ -188,4 +205,5 @@ router.delete(
     });
   }
 );
+
 module.exports = router;

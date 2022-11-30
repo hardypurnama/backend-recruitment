@@ -25,6 +25,34 @@ router.get(
   }
 );
 
+router.get(
+  "/byuser/:id",
+  authorize(["admin", "hr", "jobseeker"]),
+  async (req, res) => {
+    const id = req.params.id;
+    const kandidat = await Kandidat.findOne({
+      where: {
+        id_user: id,
+      },
+    });
+    return res.json(kandidat || {});
+  }
+);
+
+router.get(
+  "/byhr/:id",
+  authorize(["admin", "hr", "jobseeker"]),
+  async (req, res) => {
+    const id = req.params.id;
+    const kandidat = await Kandidat.findOne({
+      where: {
+        id_hr: id,
+      },
+    });
+    return res.json(kandidat || {});
+  }
+);
+
 router.post("/", authorize(["admin", "hr", "jobseeker"]), async (req, res) => {
   //   res.send("ini adalah post");
   const schema = {
