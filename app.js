@@ -3,12 +3,13 @@ var express = require("express");
 var path = require("path");
 var cookieParser = require("cookie-parser");
 var logger = require("morgan");
-var cors = require ("cors");
+var cors = require("cors");
 
 var indexRouter = require("./routes/index");
 var usersRouter = require("./routes/users");
 var productsRouter = require("./routes/products");
 var kandidatsRouter = require("./routes/kandidats");
+var notifikasisRouter = require("./routes/notifikasi");
 var app = express();
 
 app.use(cors());
@@ -22,4 +23,5 @@ app.use("/", indexRouter);
 app.use("/users", usersRouter);
 app.use("/products", productsRouter);
 app.use("/kandidats", kandidatsRouter);
+app.use("/notifikasi", notifikasisRouter);
 module.exports = app;
