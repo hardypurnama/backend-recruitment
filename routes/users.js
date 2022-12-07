@@ -39,11 +39,20 @@ router.get("/", async (req, res) => {
   return res.json(users);
 });
 
-router.get("/:id", async (req, res) => {
-  const id = req.params.id;
-  const user = await User.findByPk(id);
-  return res.json(user || {});
-});
+router.get(
+  "/:id",
+  authorize(["admin", "hr", "jobseeker"]),
+  async (req, res) => {
+    const id = req.params.id;
+    const user = await User.findByPk(id);
+    const Role = await role.findOne({ where: { user_id: user.id } });
+    user.role = Role.role; //inject role ke user
+    if (!user) {
+      return res.json({ message: "user not found" });
+    }
+    return res.json(user || {});
+  }
+);
 
 router.post("/", authorize(["admin", "hr"]), async (req, res) => {
   //   res.send("ini adalah post");
