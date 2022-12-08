@@ -9,15 +9,17 @@ const { Kandidat, Product, User } = require("../models");
 Product.hasOne(Kandidat, { foreignKey: "id_lowongan" });
 Kandidat.belongsTo(Product, { foreignKey: "id_lowongan" });
 
-// User.hasOne(Kandidat, { foreignKey: "id_hr" });
-// Kandidat.belongsTo(User, { foreignKey: "id_hr" });
+User.hasOne(Kandidat, { foreignKey: "id_user" });
+Kandidat.belongsTo(User, { foreignKey: "id_user" });
 
 //di FE ambil id product/id lowongan, id user
 //user login sebagai hr ada update status yg akan isi otomatis id hr
 const v = new Validator();
 
 router.get("/", authorize(["admin", "hr"]), async (req, res) => {
-  const kandidats = await Kandidat.findAll();
+  const kandidats = await Kandidat.findAll({
+    include: [Product, User],
+  });
   return res.json(kandidats);
 });
 
