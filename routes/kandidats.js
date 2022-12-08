@@ -4,7 +4,13 @@ var { authorize } = require("../middleware/authorize");
 const Validator = require("fastest-validator");
 
 //untuk memanggil nama
-const { Kandidat } = require("../models");
+const { Kandidat, Product, User } = require("../models");
+
+Product.hasOne(Kandidat, { foreignKey: "id_lowongan" });
+Kandidat.belongsTo(Product, { foreignKey: "id_lowongan" });
+
+// User.hasOne(Kandidat, { foreignKey: "id_hr" });
+// Kandidat.belongsTo(User, { foreignKey: "id_hr" });
 
 //di FE ambil id product/id lowongan, id user
 //user login sebagai hr ada update status yg akan isi otomatis id hr
@@ -30,10 +36,11 @@ router.get(
   authorize(["admin", "hr", "jobseeker"]),
   async (req, res) => {
     const id = req.params.id;
-    const kandidat = await Kandidat.findOne({
+    const kandidat = await Kandidat.findAll({
       where: {
         id_user: id,
       },
+      include: [Product],
     });
     return res.json(kandidat || {});
   }
