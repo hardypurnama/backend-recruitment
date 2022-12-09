@@ -4,7 +4,7 @@ var { authorize } = require("../middleware/authorize");
 const Validator = require("fastest-validator");
 
 //untuk memanggil nama
-const { Kandidat, Product, User } = require("../models");
+const { Kandidat, Product, User, Notifikasi } = require("../models");
 
 Product.hasOne(Kandidat, { foreignKey: "id_lowongan" });
 Kandidat.belongsTo(Product, { foreignKey: "id_lowongan" });
@@ -105,6 +105,11 @@ router.put("/:id", authorize(["admin", "hr"]), async (req, res) => {
     return res.status(400).json(validate);
   }
   //   res.send("ok");
+  const notifikasi = await Notifikasi.create({
+    id_user: req.body.id_user,
+    status_notif: false,
+    deskripsi: "Lowongan anda sudah terupdate",
+  });
   kandidat = await kandidat.update(req.body);
   res.json(kandidat);
 });
