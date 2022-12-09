@@ -28,7 +28,12 @@ router.get(
   authorize(["admin", "hr", "jobseeker"]),
   async (req, res) => {
     const id = req.params.id;
-    const kandidat = await Kandidat.findByPk(id);
+    const kandidat = await Kandidat.findOne({
+      where: {
+        id: id,
+      },
+      include: [Product, User],
+    });
     return res.json(kandidat || {});
   }
 );
@@ -42,7 +47,7 @@ router.get(
       where: {
         id_user: id,
       },
-      include: [Product],
+      include: [Product, User],
     });
     return res.json(kandidat || {});
   }
