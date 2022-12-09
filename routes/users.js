@@ -7,9 +7,16 @@ const Validator = require("fastest-validator");
 const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
 const nodemailer = require("nodemailer");
+const { OAuth2Client } = require("google-auth-library");
 
+const oAuth2Client = new OAuth2Client(
+  process.env.CLIENT_ID,
+  process.env.CLIENT_SECRET,
+  "postmessage"
+);
 //untuk memanggil nama
 const { User, role } = require("../models");
+const user = require("../models/user");
 // const role = require("../models/role");
 
 const v = new Validator();
@@ -113,7 +120,7 @@ router.post("/register", async (req, res) => {
     return res.status(400).json(validate);
   }
 
-  const { email, username } = req.body;
+  const { email, username, url } = req.body;
 
   const validateEmail = await User.findOne({
     where: {
@@ -123,6 +130,25 @@ router.post("/register", async (req, res) => {
   if (validateEmail) {
     return res.json({ message: "username/email already exsist!" });
   }
+
+  const token = jwt.sign({ email: email }, "secret", {
+    expiresIn: "1h",
+  });
+
+  // send the user an email with the new password
+  const mailOptions = {
+    from: process.env.EMAIL_USER,
+    to: email,
+    subject: "Verify your email",
+    text: `Click this link to verify your email: https://${url + token}`,
+  };
+  transport.sendMail(mailOptions, (err, info) => {
+    if (err) {
+      console.error(err);
+    } else {
+      console.log(`Email sent: ${info.response}`);
+    }
+  });
 
   //   res.send("ok");
   const user = await User.create(req.body);
@@ -266,6 +292,48 @@ router.post("/reset-password", async (req, res) => {
   });
 
   res.json({ msg: "Password reset successful" });
+});
+
+router.post("/google", async (req, res) => {
+  const userProfile = await oAuth2Client
+    .verifyIdToken({
+      idToken: req.body.credentials,
+      audience: req.body.clientId,
+    })
+    .getPayload();
+
+  const user = await User.create({
+    nama: userProfile.name,
+    foto: userProfile.picture,
+    username: userProfile.sub,
+    password: userProfile.sub,
+    email: userProfile.email,
+    nohp: "0",
+    tgl_lahir: "2000-01-01",
+    domisili: "-",
+    document: "",
+  });
+  const Role = await role.create({
+    user_id: user.id,
+    role: "jobseeker",
+  });
+
+  res.json(user);
+});
+
+router.post("/verify/:token", async (req, res) => {
+  // check for validation errors
+  const email = jwt.verify(req.params.token, "secret");
+  // find the user with the provided email
+  const user = await User.findOne({ where: { email: email.email } });
+  const verified = await user.update({ verified: true });
+  if (!user) {
+    return res.status(400).json({ errors: [{ msg: "User not found" }] });
+  }
+  if (!verified) {
+    return res.status(400).json({ errors: [{ msg: "Email not verified!" }] });
+  }
+  res.json({ msg: "email verified!" });
 });
 
 module.exports = router;
