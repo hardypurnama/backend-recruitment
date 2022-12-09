@@ -14,6 +14,20 @@ router.get("/", async (req, res) => {
   return res.json(notifikasis);
 });
 
+router.get(
+  "/byuser/:id",
+  authorize(["admin", "hr", "jobseeker"]),
+  async (req, res) => {
+    const id = req.params.id;
+    const notifikasi = await Notifikasi.findAll({
+      where: {
+        id_user: id,
+      },
+    });
+    return res.json(notifikasi || {});
+  }
+);
+
 router.get("/:id", async (req, res) => {
   const id = req.params.id;
   const notifikasi = await Notifikasi.findByPk(id);
