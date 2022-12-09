@@ -6,13 +6,21 @@ const upload = require("../controllers/upload");
 const Validator = require("fastest-validator");
 const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
+const nodemailer = require("nodemailer");
 
 //untuk memanggil nama
 const { User, role } = require("../models");
 // const role = require("../models/role");
 
 const v = new Validator();
-
+const transport = nodemailer.createTransport({
+  service: "gmail",
+  auth: {
+    user: process.env.EMAIL_USER,
+    pass: process.env.EMAIL_PASSWORD,
+  },
+});
+console.log(process.env.EMAIL_PASSWORD, process.env.EMAIL_USER);
 encryptPassword = (password) => bcrypt.hashSync(password, 10);
 
 verifyPassword = (password, encryptedPassword) =>
@@ -214,5 +222,50 @@ router.delete(
     });
   }
 );
+
+router.post("/reset-password", async (req, res) => {
+  // check for validation errors
+
+  // find the user with the provided email
+  const user = await User.findOne({ where: { email: req.body.email } });
+  if (!user) {
+    return res.status(400).json({ errors: [{ msg: "User not found" }] });
+  }
+
+  // generate a new password and hash it
+  const newPassword = Math.random().toString(36).slice(-8);
+  const passwordHash = await bcrypt.hash(newPassword, 10);
+
+  // update the user's password
+  await user.update({ password: passwordHash });
+
+  // generate a JWT with the user's id and email
+  const payload = {
+    user: {
+      id: user.id,
+      email: user.email,
+    },
+  };
+  const token = jwt.sign(payload, "secrets", {
+    expiresIn: "1h",
+  });
+
+  // send the user an email with the new password
+  const mailOptions = {
+    from: process.env.EMAIL_USER,
+    to: user.email,
+    subject: "Password reset",
+    text: `Your new password is ${newPassword}. You can use this password to log in to your account.`,
+  };
+  transport.sendMail(mailOptions, (err, info) => {
+    if (err) {
+      console.error(err);
+    } else {
+      console.log(`Email sent: ${info.response}`);
+    }
+  });
+
+  res.json({ msg: "Password reset successful" });
+});
 
 module.exports = router;

@@ -45,6 +45,11 @@ module.exports = (sequelize, DataTypes) => {
       document: {
         type: DataTypes.TEXT,
       },
+
+      verified: {
+        type: DataTypes.BOOLEAN,
+      },
+
       createdAt: {
         allowNull: false,
         type: DataTypes.DATE,

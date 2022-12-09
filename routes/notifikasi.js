@@ -75,7 +75,7 @@ router.put("/:id", async (req, res) => {
     return res.status(400).json(validate);
   }
   //   res.send("ok");
-  notifikasi = await Notifikasi.update(req.body);
+  notifikasi = await notifikasi.update(req.body);
   res.json(notifikasi);
 });
 
