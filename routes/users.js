@@ -10,8 +10,8 @@ const nodemailer = require("nodemailer");
 const { OAuth2Client } = require("google-auth-library");
 
 const oAuth2Client = new OAuth2Client(
-  process.env.CLIENT_ID,
-  process.env.CLIENT_SECRET,
+  process.env.GOOGLE_CLIENT_ID,
+  process.env.GOOGLE_CLIENT_SECRET,
   "postmessage"
 );
 //untuk memanggil nama
@@ -140,7 +140,7 @@ router.post("/register", async (req, res) => {
     from: process.env.EMAIL_USER,
     to: email,
     subject: "Verify your email",
-    text: `Click this link to verify your email: https://${url + token}`,
+    text: `Click this link to verify your email: ${url + token}`,
   };
   transport.sendMail(mailOptions, (err, info) => {
     if (err) {
@@ -151,6 +151,7 @@ router.post("/register", async (req, res) => {
   });
 
   //   res.send("ok");
+  req.body.verified = false;
   const user = await User.create(req.body);
   const Role = await role.create({
     user_id: user.id,
@@ -297,17 +298,17 @@ router.post("/reset-password", async (req, res) => {
 router.post("/google", async (req, res) => {
   const userProfile = await oAuth2Client
     .verifyIdToken({
-      idToken: req.body.credentials,
+      idToken: req.body.credential,
       audience: req.body.clientId,
     })
-    .getPayload();
+  const userInfo = userProfile.getPayload();
 
   const user = await User.create({
-    nama: userProfile.name,
-    foto: userProfile.picture,
-    username: userProfile.sub,
-    password: userProfile.sub,
-    email: userProfile.email,
+    nama: userInfo.name,
+    foto: userInfo.picture,
+    username: userInfo.sub,
+    password: userInfo.sub,
+    email: userInfo.email,
     nohp: "0",
     tgl_lahir: "2000-01-01",
     domisili: "-",
@@ -318,10 +319,22 @@ router.post("/google", async (req, res) => {
     role: "jobseeker",
   });
 
-  res.json(user);
+  const token = jwt.sign(
+    { id: user.id, username: user.username, role: Role.role },
+    "secret",
+    {
+      expiresIn: "10m",
+    }
+  );
+  return res.status(200).json({
+    message: "login successfully!",
+    id: user.id,
+    username: user.username,
+    token,
+  });
 });
 
-router.post("/verify/:token", async (req, res) => {
+router.get("/verify/:token", async (req, res) => {
   // check for validation errors
   const email = jwt.verify(req.params.token, "secret");
   // find the user with the provided email
